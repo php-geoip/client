@@ -1,0 +1,48 @@
+{
+    "name": "php-geoip/client",
+    "description": "GeoIp capable of supporting any Ip to geolocation service",
+    "keywords": [
+        "geoip"
+    ],
+    "homepage": "https://github.com/php-geoip/client",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Ryan Colson",
+            "email": "ryan@ryanc.co"
+        }
+    ],
+    "require": {
+        "php": "^8.2"
+    },
+    "require-dev": {
+        "geoip2/geoip2": "~2.1",
+        "laravel/pint": "^1.14",
+        "phpstan/phpstan": "^1.8",
+        "phpunit/phpunit": "^10.5"
+    },
+    "suggest": {
+        "geoip2/geoip2": "Required to use the MaxMind service (~2.1)"
+    },
+    "autoload": {
+        "psr-4": {
+            "GeoIp\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "GeoIp\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "analyze": "vendor/bin/phpstan analyze",
+        "test": "vendor/bin/phpunit",
+        "test-coverage": "vendor/bin/phpunit --coverage-html coverage",
+        "format": "vendor/bin/pint"
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}
