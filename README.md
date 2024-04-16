@@ -11,7 +11,7 @@ This package provides an opinionated framework for resolving geolocations from I
 You can install the package via composer:
 
 ```bash
-composer require geoip/client:^0.1
+composer require php-geoip/client:^0.1
 ```
 
 ## Usage
@@ -24,10 +24,6 @@ $geoip = new GeoIp($locator, $cache);
 $location = $geoip->locate($ip);
 
 $location->countryCode; // 'US'
-
-if ($location->isDefault) {
-    //
-}
 ```
 
 ## Testing
