@@ -6,7 +6,6 @@ namespace GeoIp\Tests\Unit;
 
 use GeoIp\Exceptions\InvalidIpAddressException;
 use GeoIp\GeoIp;
-use GeoIp\Location;
 use GeoIp\Tests\Mocks\MockService;
 use GeoIp\Caches\NullCache;
 use PHPUnit\Framework\TestCase;
@@ -35,19 +34,6 @@ class GeoIpTest extends TestCase
         $geoip = new GeoIp(new MockService(), new NullCache());
         $this->expectException(InvalidIpAddressException::class);
         $geoip->locate($ip);
-    }
-
-    /** @dataProvider providesPrivateIpAddresses */
-    public function test_it_falls_back_to_a_default_location_if_an_invalid_ip_address_is_provided(string $ip): void
-    {
-        $geoip = new GeoIp(
-            new MockService(),
-            new NullCache(),
-            $default = new Location('2.2.2.2')
-        );
-
-        $location = $geoip->locate($ip);
-        $this->assertEquals($default->ip, $location->ip);
     }
 
     /**

@@ -20,4 +20,13 @@ readonly class Location
         public ?string $timezone = null,
     ) {
     }
+
+    public function clone(...$properties): Location
+    {
+        $existing = get_object_vars($this);
+
+        return new static(
+            ...array_replace($existing, array_intersect_key($properties, $existing))
+        );
+    }
 }
