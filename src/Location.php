@@ -18,6 +18,7 @@ readonly class Location
         public ?float $latitude = null,
         public ?float $longitude = null,
         public ?string $timezone = null,
+        public bool $isDefault = false,
     ) {
     }
 
