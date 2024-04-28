@@ -8,6 +8,7 @@ use GeoIp\Contracts\Cache;
 use GeoIp\Contracts\Service;
 use GeoIp\Exceptions\InvalidIpAddressException;
 use GeoIp\Exceptions\LocationNotFoundException;
+use GeoIp\Support\Currency;
 
 final readonly class GeoIp
 {
@@ -30,7 +31,13 @@ final readonly class GeoIp
             }
 
             return $this->cache->remember($ip, function ($ip) {
-                return $this->service->locate($ip);
+                $location = $this->service->locate($ip);
+
+                if ($this->needsCurrency($location) && $currency = $this->getCurrency($location)) {
+                    $location = $location->clone(currency: $currency);
+                }
+
+                return $location;
             });
         } catch (InvalidIpAddressException | LocationNotFoundException $e) {
             if ($this->default) {
@@ -50,5 +57,15 @@ final readonly class GeoIp
     private function setDefaultLocation(Location|null $default): void
     {
         $this->default = $default?->clone(isDefault: true);
+    }
+
+    private function needsCurrency(Location $location): bool
+    {
+        return $location->countryCode && ! $location->currency;
+    }
+
+    private function getCurrency(Location $location): string|null
+    {
+        return Currency::fromCountryCode($location->countryCode);
     }
 }

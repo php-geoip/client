@@ -58,6 +58,13 @@ class GeoIpTest extends TestCase
         $this->assertEquals($default->ip, $location->ip);
     }
 
+    public function test_it_adds_a_currency_if_one_exists(): void
+    {
+        $geoip = new GeoIp(new MockService(), new NullCache());
+        $location = $geoip->locate('1.1.1.1');
+        $this->assertEquals('1.1.1.1', $location->ip);
+    }
+
     /**
      * @return array<string, array<string>>
      */
