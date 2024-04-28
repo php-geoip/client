@@ -2,6 +2,8 @@ name: Fix styling
 
 on:
   push:
+    branches:
+      - master
     paths:
       - '**.php'
       - 'pint.json'
