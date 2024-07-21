@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace GeoIp;
 
-use GeoIp\Caches\MemoryCache;
+use GeoIp\Caches\NullCache;
 use GeoIp\Contracts\Cache;
 use GeoIp\Contracts\CurrencyCodeFactory;
 use GeoIp\Contracts\Service;
@@ -16,7 +16,7 @@ final readonly class GeoIp
 {
     private ?Location $default;
 
-    public function __construct(private Service $service, private Cache $cache = new MemoryCache(), private CurrencyCodeFactory $currencyFactory = new CountryCodeMap(), ?Location $default = null)
+    public function __construct(private Service $service, private Cache $cache = new NullCache(), private CurrencyCodeFactory $currencyFactory = new CountryCodeMap(), ?Location $default = null)
     {
         $this->default = $default?->clone(isDefault: true);
     }
