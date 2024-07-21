@@ -17,7 +17,8 @@ jobs:
       - name: Download MaxMind Database
         env:
           LICENSE_KEY: ${{ secrets.MAXMIND_LICENSE_KEY }}
-        run: curl -sS "https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-City&license_key=$LICENSE_KEY&suffix=tar.gz" > geoip.tar.gz
+          ACCOUNT_ID: ${{ secrets.MAXMIND_ACCOUNT_ID }}
+        run: curl -s -J -L -u $ACCOUNT_ID:$LICENSE_KEY "https://download.maxmind.com/geoip/databases/GeoLite2-City/download?suffix=tar.gz" > geoip.tar.gz
 
       - name: Upload MaxMind Database
         uses: actions/upload-artifact@v4
@@ -55,6 +56,8 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: maxmind-database
+
+      - name: Unpack MaxMind Database
         run: |
           tar -zf geoip.tar.gz --directory tests/Fixtures --strip-components=1 --wildcards -x "*.mmdb"
           rm geoip.tar.gz
