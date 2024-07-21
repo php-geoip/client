@@ -16,8 +16,12 @@ final readonly class GeoIp
 {
     private ?Location $default;
 
-    public function __construct(private Service $service, private Cache $cache = new NullCache(), private CurrencyCodeFactory $currencyFactory = new CountryCodeMap(), ?Location $default = null)
-    {
+    public function __construct(
+        private Service $service,
+        private Cache $cache = new NullCache(),
+        private CurrencyCodeFactory $currencyFactory = new CountryCodeMap(),
+        ?Location $default = null
+    ) {
         $this->default = $default?->clone(isDefault: true);
     }
 
