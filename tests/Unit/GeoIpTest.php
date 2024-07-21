@@ -49,7 +49,7 @@ class GeoIpTest extends TestCase
         $geoip = new GeoIp(
             new MockService(),
             new NullCache(),
-            $default = new Location('1.1.1.1', 'US', 'United States')
+            default: $default = new Location('1.1.1.1', 'US', 'United States')
         );
 
         $location = $geoip->locate($ip);

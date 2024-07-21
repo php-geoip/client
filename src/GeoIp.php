@@ -4,19 +4,21 @@ declare(strict_types=1);
 
 namespace GeoIp;
 
+use GeoIp\Caches\MemoryCache;
 use GeoIp\Contracts\Cache;
+use GeoIp\Contracts\CurrencyCodeFactory;
 use GeoIp\Contracts\Service;
+use GeoIp\CurrencyCodeFactories\CountryCodeMap;
 use GeoIp\Exceptions\InvalidIpAddressException;
 use GeoIp\Exceptions\LocationNotFoundException;
-use GeoIp\Support\Currency;
 
 final readonly class GeoIp
 {
-    private Location|null $default;
+    private ?Location $default;
 
-    public function __construct(private Service $service, private Cache $cache, Location|null $default = null)
+    public function __construct(private Service $service, private Cache $cache = new MemoryCache(), private CurrencyCodeFactory $currencyFactory = new CountryCodeMap(), ?Location $default = null)
     {
-        $this->setDefaultLocation($default);
+        $this->default = $default?->clone(isDefault: true);
     }
 
     /**
@@ -33,7 +35,7 @@ final readonly class GeoIp
             return $this->cache->remember($ip, function ($ip) {
                 $location = $this->service->locate($ip);
 
-                if ($this->needsCurrency($location) && $currency = $this->getCurrency($location)) {
+                if (! $location->currency && $currency = $this->currencyFactory->forLocation($location)) {
                     $location = $location->clone(currency: $currency);
                 }
 
@@ -52,20 +54,5 @@ final readonly class GeoIp
     {
         return filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4 | FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)
             || filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6 | FILTER_FLAG_NO_PRIV_RANGE);
-    }
-
-    private function setDefaultLocation(Location|null $default): void
-    {
-        $this->default = $default?->clone(isDefault: true);
-    }
-
-    private function needsCurrency(Location $location): bool
-    {
-        return $location->countryCode && ! $location->currency;
-    }
-
-    private function getCurrency(Location $location): string|null
-    {
-        return Currency::fromCountryCode($location->countryCode);
     }
 }
