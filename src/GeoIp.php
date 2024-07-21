@@ -46,11 +46,7 @@ final readonly class GeoIp
                 return $location;
             });
         } catch (InvalidIpAddressException | LocationNotFoundException $e) {
-            if ($this->default) {
-                return $this->default;
-            }
-
-            throw $e;
+            return $this->default ?? throw $e;
         }
     }
 
