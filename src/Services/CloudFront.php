@@ -6,6 +6,7 @@ namespace GeoIp\Services;
 
 use GeoIp\Contracts\Service;
 use GeoIp\Location;
+use GeoIp\Services\Concerns\InteractsWithRequest;
 
 /*
  * A runtime-only Locator service leveraging CloudFront's 'additional geolocation headers'
@@ -17,29 +18,21 @@ use GeoIp\Location;
  */
 final class CloudFront implements Service
 {
+    use InteractsWithRequest;
+
     public function locate(string $ip): Location
     {
         return new Location(
             ip: $ip,
-            countryCode: $this->castHeaderIfExists('CloudFront-Viewer-Country'),
-            countryName: $this->castHeaderIfExists('CloudFront-Viewer-Country-Name'),
-            stateCode: $this->castHeaderIfExists('CloudFront-Viewer-Country-Region'),
-            stateName: $this->castHeaderIfExists('CloudFront-Viewer-Country-Region-Name'),
-            city: $this->castHeaderIfExists('CloudFront-Viewer-City'),
-            postalCode: $this->castHeaderIfExists('CloudFront-Viewer-Postal-Code'),
-            latitude: $this->castHeaderIfExists('CloudFront-Viewer-Latitude', 'float'),
-            longitude: $this->castHeaderIfExists('CloudFront-Viewer-Longitude', 'float'),
-            timezone: $this->castHeaderIfExists('CloudFront-Viewer-Time-Zone'),
+            countryCode: $this->getHeader('CloudFront-Viewer-Country') ?: null,
+            countryName: $this->getHeader('CloudFront-Viewer-Country-Name') ?: null,
+            stateCode: $this->getHeader('CloudFront-Viewer-Country-Region') ?: null,
+            stateName: $this->getHeader('CloudFront-Viewer-Country-Region-Name') ?: null,
+            city: $this->getHeader('CloudFront-Viewer-City') ?: null,
+            postalCode: $this->getHeader('CloudFront-Viewer-Postal-Code') ?: null,
+            latitude: ($latitude = $this->getHeader('CF_IPLATITUDE')) ? (float) $latitude : null,
+            longitude: ($longitude = $this->getHeader('CF_IPLONGITUDE')) ? (float) $longitude : null,
+            timezone: $this->getHeader('CloudFront-Viewer-Time-Zone') ?: null,
         );
-    }
-
-    private function castHeaderIfExists(string $header, string $type = 'string'): mixed
-    {
-        $header = 'HTTP_'.strtoupper($header);
-        if (! is_null($value = $_SERVER[$header] ?? null)) {
-            settype($value, $type);
-        }
-
-        return $value;
     }
 }

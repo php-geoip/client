@@ -4,14 +4,25 @@ declare(strict_types=1);
 
 namespace GeoIp;
 
+use GeoIp\Caches\NullCache;
 use GeoIp\Contracts\Cache;
+use GeoIp\Contracts\CurrencyCodeFactory;
 use GeoIp\Contracts\Service;
+use GeoIp\CurrencyCodeFactories\CountryCodeMap;
 use GeoIp\Exceptions\InvalidIpAddressException;
+use GeoIp\Exceptions\LocationNotFoundException;
 
 final readonly class GeoIp
 {
-    public function __construct(private Service $service, private Cache $cache)
-    {
+    private ?Location $default;
+
+    public function __construct(
+        private Service $service,
+        private Cache $cache = new NullCache(),
+        private CurrencyCodeFactory $currencyFactory = new CountryCodeMap(),
+        ?Location $default = null
+    ) {
+        $this->default = $default?->clone(isDefault: true);
     }
 
     /**
@@ -20,13 +31,27 @@ final readonly class GeoIp
      */
     public function locate(string $ip): Location
     {
-        if (! $this->isValid($ip)) {
-            throw new InvalidIpAddressException($ip);
-        }
+        try {
+            if (! $this->isValid($ip)) {
+                throw new InvalidIpAddressException($ip);
+            }
 
-        return $this->cache->remember($ip, function ($ip) {
-            return $this->service->locate($ip);
-        });
+            return $this->cache->remember($ip, function ($ip) {
+                $location = $this->service->locate($ip);
+
+                if (! $location->currency && $currency = $this->currencyFactory->forLocation($location)) {
+                    $location = $location->clone(currency: $currency);
+                }
+
+                return $location;
+            });
+        } catch (InvalidIpAddressException | LocationNotFoundException $e) {
+            if ($this->default) {
+                return $this->default;
+            }
+
+            throw $e;
+        }
     }
 
     private function isValid(string $ip): bool
