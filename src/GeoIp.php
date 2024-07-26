@@ -6,22 +6,17 @@ namespace GeoIp;
 
 use GeoIp\Caches\NullCache;
 use GeoIp\Contracts\Cache;
-use GeoIp\Contracts\CurrencyCodeFactory;
 use GeoIp\Contracts\Service;
-use GeoIp\CurrencyCodeFactories\CountryCodeMap;
 use GeoIp\Exceptions\InvalidIpAddressException;
 use GeoIp\Exceptions\LocationNotFoundException;
+use GeoIp\Support\Currency;
 
 final readonly class GeoIp
 {
     private ?Location $default;
 
-    public function __construct(
-        private Service $service,
-        private Cache $cache = new NullCache(),
-        private CurrencyCodeFactory $currencyFactory = new CountryCodeMap(),
-        ?Location $default = null
-    ) {
+    public function __construct(private Service $service, private Cache $cache = new NullCache(), ?Location $default = null)
+    {
         $this->default = $default?->clone(isDefault: true);
     }
 
@@ -39,7 +34,7 @@ final readonly class GeoIp
             return $this->cache->remember($ip, function ($ip) {
                 $location = $this->service->locate($ip);
 
-                if (! $location->currency && $currency = $this->currencyFactory->forLocation($location)) {
+                if (! $location->currency && $currency = $this->getCurrencyCode($location)) {
                     $location = $location->clone(currency: $currency);
                 }
 
@@ -58,5 +53,10 @@ final readonly class GeoIp
     {
         return filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4 | FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)
             || filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6 | FILTER_FLAG_NO_PRIV_RANGE);
+    }
+
+    private function getCurrencyCode(Location $location): ?string
+    {
+        return Currency::fromCountryCode((string) $location->countryCode);
     }
 }

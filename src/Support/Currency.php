@@ -2,14 +2,11 @@
 
 declare(strict_types=1);
 
-namespace GeoIp\CurrencyCodeFactories;
+namespace GeoIp\Support;
 
-use GeoIp\Contracts\CurrencyCodeFactory;
-use GeoIp\Location;
-
-class CountryCodeMap implements CurrencyCodeFactory
+class Currency
 {
-    public function forLocation(Location $location): ?string
+    public static function fromCountryCode(string $countryCode): ?string
     {
         /*
          * Map of ISO-3166 country codes to ISO-4217 currency codes.
@@ -262,6 +259,6 @@ class CountryCodeMap implements CurrencyCodeFactory
             'ZA' => 'ZAR',
             'ZM' => 'ZMK',
             'ZW' => 'ZWL',
-        ][(string) $location->countryCode] ?? null;
+        ][$countryCode] ?? null;
     }
 }
