@@ -9,15 +9,14 @@ use GeoIp\Contracts\Cache;
 use GeoIp\Contracts\Service;
 use GeoIp\Exceptions\InvalidIpAddressException;
 use GeoIp\Exceptions\LocationNotFoundException;
-use GeoIp\Support\Currency;
 
 final readonly class GeoIp
 {
-    private ?Location $default;
-
-    public function __construct(private Service $service, private Cache $cache = new NullCache(), ?Location $default = null)
-    {
-        $this->default = $default?->clone(isDefault: true);
+    public function __construct(
+        private Service $service,
+        private Cache $cache = new NullCache(),
+        private ?Location $default = null
+    ) {
     }
 
     /**
@@ -31,21 +30,9 @@ final readonly class GeoIp
                 throw new InvalidIpAddressException($ip);
             }
 
-            return $this->cache->remember($ip, function ($ip) {
-                $location = $this->service->locate($ip);
-
-                if (! $location->currency && $currency = $this->getCurrencyCode($location)) {
-                    $location = $location->clone(currency: $currency);
-                }
-
-                return $location;
-            });
+            return $this->cache->remember($ip, fn ($ip) => $this->service->locate($ip));
         } catch (InvalidIpAddressException | LocationNotFoundException $e) {
-            if ($this->default) {
-                return $this->default;
-            }
-
-            throw $e;
+            return $this->default ?? throw $e;
         }
     }
 
@@ -53,10 +40,5 @@ final readonly class GeoIp
     {
         return filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4 | FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)
             || filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6 | FILTER_FLAG_NO_PRIV_RANGE);
-    }
-
-    private function getCurrencyCode(Location $location): ?string
-    {
-        return Currency::fromCountryCode((string) $location->countryCode);
     }
 }

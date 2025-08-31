@@ -1,6 +1,0 @@
-parameters:
-	ignoreErrors:
-		-
-			message: "#^Method GeoIp\\\\Location\\:\\:clone\\(\\) has parameter \\$properties with no type specified\\.$#"
-			count: 1
-			path: src/Location.php
