@@ -30,8 +30,8 @@ final class CloudFront implements Service
             stateName: $this->getHeader('CloudFront-Viewer-Country-Region-Name') ?: null,
             city: $this->getHeader('CloudFront-Viewer-City') ?: null,
             postalCode: $this->getHeader('CloudFront-Viewer-Postal-Code') ?: null,
-            latitude: ($latitude = $this->getHeader('CF_IPLATITUDE')) ? (float) $latitude : null,
-            longitude: ($longitude = $this->getHeader('CF_IPLONGITUDE')) ? (float) $longitude : null,
+            latitude: ($latitude = $this->getHeader('CloudFront-Viewer-Latitude')) ? (float) $latitude : null,
+            longitude: ($longitude = $this->getHeader('CloudFront-Viewer-Longitude')) ? (float) $longitude : null,
             timezone: $this->getHeader('CloudFront-Viewer-Time-Zone') ?: null,
         );
     }
