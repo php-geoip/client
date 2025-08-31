@@ -6,23 +6,17 @@ namespace GeoIp;
 
 use GeoIp\Caches\NullCache;
 use GeoIp\Contracts\Cache;
-use GeoIp\Contracts\CurrencyCodeFactory;
 use GeoIp\Contracts\Service;
-use GeoIp\CurrencyCodeFactories\CountryCodeMap;
 use GeoIp\Exceptions\InvalidIpAddressException;
 use GeoIp\Exceptions\LocationNotFoundException;
 
 final readonly class GeoIp
 {
-    private ?Location $default;
-
     public function __construct(
         private Service $service,
         private Cache $cache = new NullCache(),
-        private CurrencyCodeFactory $currencyFactory = new CountryCodeMap(),
-        ?Location $default = null
+        private ?Location $default = null
     ) {
-        $this->default = $default?->clone(isDefault: true);
     }
 
     /**
@@ -36,21 +30,9 @@ final readonly class GeoIp
                 throw new InvalidIpAddressException($ip);
             }
 
-            return $this->cache->remember($ip, function ($ip) {
-                $location = $this->service->locate($ip);
-
-                if (! $location->currency && $currency = $this->currencyFactory->forLocation($location)) {
-                    $location = $location->clone(currency: $currency);
-                }
-
-                return $location;
-            });
+            return $this->cache->remember($ip, fn ($ip) => $this->service->locate($ip));
         } catch (InvalidIpAddressException | LocationNotFoundException $e) {
-            if ($this->default) {
-                return $this->default;
-            }
-
-            throw $e;
+            return $this->default ?? throw $e;
         }
     }
 
