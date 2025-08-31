@@ -9,6 +9,7 @@ use GeoIp\Contracts\Cache;
 use GeoIp\Contracts\Service;
 use GeoIp\Exceptions\InvalidIpAddressException;
 use GeoIp\Exceptions\LocationNotFoundException;
+use GeoIp\Exceptions\ServiceFailedException;
 
 final readonly class GeoIp
 {
@@ -22,6 +23,7 @@ final readonly class GeoIp
     /**
      * @throws \GeoIp\Exceptions\InvalidIpAddressException
      * @throws \GeoIp\Exceptions\LocationNotFoundException
+     * @throws \GeoIp\Exceptions\ServiceFailedException
      */
     public function locate(string $ip): Location
     {
@@ -31,7 +33,7 @@ final readonly class GeoIp
             }
 
             return $this->cache->remember($ip, fn ($ip) => $this->service->locate($ip));
-        } catch (InvalidIpAddressException | LocationNotFoundException $e) {
+        } catch (InvalidIpAddressException | LocationNotFoundException | ServiceFailedException $e) {
             return $this->default ?? throw $e;
         }
     }
