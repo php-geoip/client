@@ -7,16 +7,23 @@ namespace GeoIp;
 use GeoIp\Caches\NullCache;
 use GeoIp\Contracts\Cache;
 use GeoIp\Contracts\Service;
+use GeoIp\Events\CacheHit;
+use GeoIp\Events\CacheMiss;
+use GeoIp\Events\LookupCompleted;
+use GeoIp\Events\LookupFailed;
+use GeoIp\Events\LookupStarted;
 use GeoIp\Exceptions\InvalidIpAddressException;
 use GeoIp\Exceptions\LocationNotFoundException;
 use GeoIp\Exceptions\ServiceFailedException;
+use Psr\EventDispatcher\EventDispatcherInterface;
 
 final readonly class GeoIp
 {
     public function __construct(
         private Service $service,
         private Cache $cache = new NullCache(),
-        private ?Location $default = null
+        private ?Location $default = null,
+        private ?EventDispatcherInterface $events = null,
     ) {
     }
 
@@ -27,13 +34,33 @@ final readonly class GeoIp
      */
     public function locate(string $ip): Location
     {
+        $start = microtime(true);
+        $this->events?->dispatch(new LookupStarted($this->service, $ip));
+
         try {
             if (! $this->isValid($ip)) {
                 throw new InvalidIpAddressException($ip);
             }
 
-            return $this->cache->remember($ip, fn ($ip) => $this->service->locate($ip));
+            $cacheHit = true;
+
+            $location = $this->cache->remember($ip, function ($ip) use (&$cacheHit) {
+                $this->events?->dispatch(new CacheMiss($ip));
+                $cacheHit = false;
+
+                return $this->service->locate($ip);
+            });
+
+            if ($cacheHit) {
+                $this->events?->dispatch(new CacheHit($ip, $location));
+            }
+
+            $this->events?->dispatch(new LookupCompleted($this->service, $ip, $location, microtime(true) - $start));
+
+            return $location;
         } catch (InvalidIpAddressException | LocationNotFoundException | ServiceFailedException $e) {
+            $this->events?->dispatch(new LookupFailed($this->service, $ip, $e, microtime(true) - $start));
+
             return $this->default ?? throw $e;
         }
     }
