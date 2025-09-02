@@ -11,17 +11,22 @@ class SimpleEventDispatcher implements EventDispatcherInterface
     /** @var array<class-string, callable[]> */
     private array $listeners = [];
 
-    public function listen(string $eventClass, callable $listener): void
+    /**
+     * @param class-string $class
+     */
+    public function listen(string $class, callable $listener): void
     {
-        $this->listeners[$eventClass][] = $listener;
+        $this->listeners[$class][] = $listener;
     }
 
-    public function dispatch(object $event): void
+    public function dispatch(object $event): object
     {
-        $eventClass = get_class($event);
+        $class = get_class($event);
 
-        foreach ($this->listeners[$eventClass] ?? [] as $listener) {
+        foreach ($this->listeners[$class] ?? [] as $listener) {
             $listener($event);
         }
+
+        return $event;
     }
 }
