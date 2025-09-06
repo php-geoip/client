@@ -13,14 +13,15 @@
         }
     ],
     "require": {
-        "php": "^8.2"
+        "php": "^8.2",
+        "psr/event-dispatcher": "^1.0",
+        "psr/simple-cache": "^3.0"
     },
     "require-dev": {
         "geoip2/geoip2": "~2.1",
         "laravel/pint": "^1.14",
         "phpstan/phpstan": "^1.8",
-        "phpunit/phpunit": "^10.5",
-        "psr/event-dispatcher": "^1.0"
+        "phpunit/phpunit": "^10.5"
     },
     "suggest": {
         "geoip2/geoip2": "Required to use the MaxMind service (~2.1)"

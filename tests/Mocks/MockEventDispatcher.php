@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace GeoIp;
+namespace GeoIp\Tests\Mocks;
 
 use Psr\EventDispatcher\EventDispatcherInterface;
 
-class SimpleEventDispatcher implements EventDispatcherInterface
+class MockEventDispatcher implements EventDispatcherInterface
 {
     /** @var array<class-string, callable[]> */
     private array $listeners = [];

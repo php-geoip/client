@@ -4,12 +4,10 @@ declare(strict_types=1);
 
 namespace GeoIp\Exceptions;
 
-use Exception;
-
-class LocationNotFoundException extends Exception
+class LocationNotFoundException extends GeoIpException
 {
     public function __construct(string $ip)
     {
-        parent::__construct("Unable to locate Ip address [$ip].");
+        parent::__construct("Unable to locate Ip address.");
     }
 }

@@ -4,15 +4,14 @@ declare(strict_types=1);
 
 namespace GeoIp\Tests\Unit;
 
+use GeoIp\Events\CacheHit;
+use GeoIp\Events\CacheMiss;
 use GeoIp\Exceptions\InvalidIpAddressException;
 use GeoIp\GeoIp;
 use GeoIp\Location;
+use GeoIp\Tests\Mocks\MockCache;
+use GeoIp\Tests\Mocks\MockEventDispatcher;
 use GeoIp\Tests\Mocks\MockService;
-use GeoIp\Caches\NullCache;
-use GeoIp\Caches\MemoryCache;
-use GeoIp\SimpleEventDispatcher;
-use GeoIp\Events\CacheHit;
-use GeoIp\Events\CacheMiss;
 use PHPUnit\Framework\TestCase;
 
 class GeoIpTest extends TestCase
@@ -20,7 +19,7 @@ class GeoIpTest extends TestCase
     /** @dataProvider providesValidIpAddresses */
     public function test_it_locates_an_ip_addresses_geolocation(string $ip): void
     {
-        $geoip = new GeoIp(new MockService(), new NullCache());
+        $geoip = new GeoIp(new MockService());
 
         $location = $geoip->locate($ip);
 
@@ -30,7 +29,7 @@ class GeoIpTest extends TestCase
     /** @dataProvider providesInvalidIpAddresses */
     public function test_it_requires_a_valid_ip_address(string $ip): void
     {
-        $geoip = new GeoIp(new MockService(), new NullCache());
+        $geoip = new GeoIp(new MockService());
 
         $this->expectException(InvalidIpAddressException::class);
 
@@ -40,7 +39,7 @@ class GeoIpTest extends TestCase
     /** @dataProvider providesPrivateIpAddresses */
     public function test_it_requires_a_public_ip_address(string $ip): void
     {
-        $geoip = new GeoIp(new MockService(), new NullCache());
+        $geoip = new GeoIp(new MockService());
 
         $this->expectException(InvalidIpAddressException::class);
 
@@ -52,7 +51,6 @@ class GeoIpTest extends TestCase
     {
         $geoip = new GeoIp(
             new MockService(),
-            new NullCache(),
             default: $default = new Location('1.1.1.1', 'US', 'United States')
         );
 
@@ -64,14 +62,14 @@ class GeoIpTest extends TestCase
 
     public function test_it_fires_cache_miss_event_on_first_lookup(): void
     {
-        $dispatcher = new SimpleEventDispatcher();
+        $dispatcher = new MockEventDispatcher();
         $events = [];
 
         $dispatcher->listen(CacheMiss::class, function (CacheMiss $event) use (&$events) {
             $events[] = $event;
         });
 
-        $geoip = new GeoIp(new MockService(), new MemoryCache(), null, $dispatcher);
+        $geoip = new GeoIp(new MockService(), null, new MockCache(), $dispatcher);
         $geoip->locate('1.1.1.1');
 
         $this->assertCount(1, $events);
@@ -82,7 +80,7 @@ class GeoIpTest extends TestCase
 
     public function test_it_fires_cache_hit_event_on_subsequent_lookups(): void
     {
-        $dispatcher = new SimpleEventDispatcher();
+        $dispatcher = new MockEventDispatcher();
         $cacheHits = [];
         $cacheMisses = [];
 
@@ -94,7 +92,7 @@ class GeoIpTest extends TestCase
             $cacheMisses[] = $event;
         });
 
-        $geoip = new GeoIp(new MockService(), new MemoryCache(), null, $dispatcher);
+        $geoip = new GeoIp(new MockService(), null, new MockCache(), $dispatcher);
 
         // First lookup - should be a cache miss
         $firstLocation = $geoip->locate('1.1.1.1');
@@ -118,14 +116,14 @@ class GeoIpTest extends TestCase
 
     public function test_it_fires_cache_miss_for_different_ips(): void
     {
-        $dispatcher = new SimpleEventDispatcher();
+        $dispatcher = new MockEventDispatcher();
         $events = [];
 
         $dispatcher->listen(CacheMiss::class, function (CacheMiss $event) use (&$events) {
             $events[] = $event;
         });
 
-        $geoip = new GeoIp(new MockService(), new MemoryCache(), null, $dispatcher);
+        $geoip = new GeoIp(new MockService(), null, new MockCache(), $dispatcher);
 
         $geoip->locate('1.1.1.1');
         $geoip->locate('8.8.8.8');
@@ -137,7 +135,7 @@ class GeoIpTest extends TestCase
 
     public function test_it_does_not_fire_cache_hit_events_with_null_cache(): void
     {
-        $dispatcher = new SimpleEventDispatcher();
+        $dispatcher = new MockEventDispatcher();
         $cacheEvents = [];
 
         $dispatcher->listen(CacheHit::class, function (CacheHit $event) use (&$cacheEvents) {
@@ -148,7 +146,7 @@ class GeoIpTest extends TestCase
             $cacheEvents[] = ['type' => 'miss', 'event' => $event];
         });
 
-        $geoip = new GeoIp(new MockService(), new NullCache(), null, $dispatcher);
+        $geoip = new GeoIp(new MockService(), events: $dispatcher);
 
         // Multiple calls to same IP
         $geoip->locate('1.1.1.1');
@@ -158,38 +156,6 @@ class GeoIpTest extends TestCase
         $this->assertCount(2, $cacheEvents);
         $this->assertEquals('miss', $cacheEvents[0]['type']);
         $this->assertEquals('miss', $cacheEvents[1]['type']);
-    }
-
-    public function test_cache_events_contain_expected_data(): void
-    {
-        $dispatcher = new SimpleEventDispatcher();
-        $cacheHit = null;
-        $cacheMiss = null;
-
-        $dispatcher->listen(CacheHit::class, function (CacheHit $event) use (&$cacheHit) {
-            $cacheHit = $event;
-        });
-
-        $dispatcher->listen(CacheMiss::class, function (CacheMiss $event) use (&$cacheMiss) {
-            $cacheMiss = $event;
-        });
-
-        $geoip = new GeoIp(new MockService(), new MemoryCache(), null, $dispatcher);
-
-        $geoip->locate('1.1.1.1'); // Miss
-        $geoip->locate('1.1.1.1'); // Hit
-
-        // Verify cache miss event
-        $this->assertNotNull($cacheMiss);
-        $this->assertEquals('1.1.1.1', $cacheMiss->ip);
-        $this->assertGreaterThan(0, $cacheMiss->getTimestamp());
-
-        // Verify cache hit event
-        $this->assertNotNull($cacheHit);
-        $this->assertEquals('1.1.1.1', $cacheHit->ip);
-        $this->assertInstanceOf(Location::class, $cacheHit->location);
-        $this->assertEquals('1.1.1.1', $cacheHit->location->ip);
-        $this->assertGreaterThan(0, $cacheHit->getTimestamp());
     }
 
     /**

@@ -4,33 +4,31 @@ declare(strict_types=1);
 
 namespace GeoIp;
 
-use GeoIp\Caches\NullCache;
-use GeoIp\Contracts\Cache;
 use GeoIp\Contracts\Service;
 use GeoIp\Events\CacheHit;
 use GeoIp\Events\CacheMiss;
 use GeoIp\Events\LookupCompleted;
 use GeoIp\Events\LookupFailed;
 use GeoIp\Events\LookupStarted;
+use GeoIp\Exceptions\GeoIpException;
 use GeoIp\Exceptions\InvalidIpAddressException;
-use GeoIp\Exceptions\LocationNotFoundException;
-use GeoIp\Exceptions\ServiceFailedException;
 use Psr\EventDispatcher\EventDispatcherInterface;
+use Psr\SimpleCache\CacheException;
+use Psr\SimpleCache\CacheInterface;
 
 final readonly class GeoIp
 {
     public function __construct(
         private Service $service,
-        private Cache $cache = new NullCache(),
         private ?Location $default = null,
+        private ?CacheInterface $cache = null,
         private ?EventDispatcherInterface $events = null,
     ) {
     }
 
     /**
-     * @throws \GeoIp\Exceptions\InvalidIpAddressException
-     * @throws \GeoIp\Exceptions\LocationNotFoundException
-     * @throws \GeoIp\Exceptions\ServiceFailedException
+     * @throws GeoIpException
+     * @throws CacheException
      */
     public function locate(string $ip): Location
     {
@@ -42,27 +40,38 @@ final readonly class GeoIp
                 throw new InvalidIpAddressException($ip);
             }
 
-            $cacheHit = true;
-
-            $location = $this->cache->remember($ip, function ($ip) use (&$cacheHit) {
-                $this->events?->dispatch(new CacheMiss($ip));
-                $cacheHit = false;
-
-                return $this->service->locate($ip);
-            });
-
-            if ($cacheHit) {
-                $this->events?->dispatch(new CacheHit($ip, $location));
-            }
+            $location = $this->remember($ip);
 
             $this->events?->dispatch(new LookupCompleted($this->service, $ip, $location, microtime(true) - $start));
 
             return $location;
-        } catch (InvalidIpAddressException | LocationNotFoundException | ServiceFailedException $e) {
-            $this->events?->dispatch(new LookupFailed($this->service, $ip, $e, microtime(true) - $start));
+        } catch (GeoIpException $exception) {
+            $this->events?->dispatch(new LookupFailed($this->service, $ip, $exception, microtime(true) - $start));
 
-            return $this->default ?? throw $e;
+            return $this->default ?? throw $exception;
         }
+    }
+
+    /**
+     * @throws GeoIpException
+     * @throws CacheException
+     */
+    private function remember(string $ip): Location
+    {
+        if ($location = $this->cache?->get($ip)) {
+            /** @var Location $location */
+            $this->events?->dispatch(new CacheHit($ip, $location));
+
+            return $location;
+        }
+
+        $this->events?->dispatch(new CacheMiss($ip));
+
+        $location = $this->service->locate($ip);
+
+        $this->cache?->set($ip, $location);
+
+        return $location;
     }
 
     private function isValid(string $ip): bool
