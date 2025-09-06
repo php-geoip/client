@@ -13,8 +13,6 @@ use GeoIp\Caches\MemoryCache;
 use GeoIp\SimpleEventDispatcher;
 use GeoIp\Events\CacheHit;
 use GeoIp\Events\CacheMiss;
-use GeoIp\Events\LookupCompleted;
-use GeoIp\Events\LookupStarted;
 use PHPUnit\Framework\TestCase;
 
 class GeoIpTest extends TestCase
