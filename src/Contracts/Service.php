@@ -13,6 +13,7 @@ interface Service
      *
      * @throws \GeoIp\Exceptions\InvalidIpAddressException
      * @throws \GeoIp\Exceptions\LocationNotFoundException
+     * @throws \GeoIp\Exceptions\ServiceFailedException
      */
     public function locate(string $ip): Location;
 }

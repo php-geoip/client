@@ -64,7 +64,7 @@ final readonly class MaxMind implements Service
             stateName: $location->mostSpecificSubdivision->name,
             city: $location->city->name,
             postalCode: $location->postal->code,
-            continent: $location->continent->code,
+            continent: $location->continent->name,
             latitude: $location->location->latitude,
             longitude: $location->location->longitude,
             timezone: $location->location->timeZone,
