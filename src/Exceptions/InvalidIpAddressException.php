@@ -8,6 +8,6 @@ class InvalidIpAddressException extends GeoIpException
 {
     public function __construct(string $ip)
     {
-        parent::__construct("Must provide a valid Ip address.");
+        parent::__construct("Must provide a valid Ip address [$ip].");
     }
 }

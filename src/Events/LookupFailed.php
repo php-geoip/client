@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace GeoIp\Events;
 
-use Exception;
 use GeoIp\Contracts\GeoIpEvent;
 use GeoIp\Contracts\Service;
+use Throwable;
 
 readonly class LookupFailed implements GeoIpEvent
 {
@@ -15,7 +15,7 @@ readonly class LookupFailed implements GeoIpEvent
     public function __construct(
         public Service $service,
         public string $ip,
-        public Exception $exception,
+        public Throwable $exception,
         public float $duration,
     ) {
         $this->timestamp = microtime(true);

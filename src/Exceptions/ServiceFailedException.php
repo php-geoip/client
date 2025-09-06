@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace GeoIp\Exceptions;
 
 use Exception;
@@ -9,6 +11,6 @@ class ServiceFailedException extends GeoIpException
 {
     public function __construct(Service $service, string $ip, ?Exception $previous = null)
     {
-        parent::__construct("Service [" . get_class($service) . "] failed attempting to locate Ip address.", previous: $previous);
+        parent::__construct("Service [" . get_class($service) . "] failed attempting to locate Ip address [$ip].", previous: $previous);
     }
 }

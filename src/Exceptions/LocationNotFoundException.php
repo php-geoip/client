@@ -8,6 +8,6 @@ class LocationNotFoundException extends GeoIpException
 {
     public function __construct(string $ip)
     {
-        parent::__construct("Unable to locate Ip address.");
+        parent::__construct("Unable to locate Ip address [$ip].");
     }
 }

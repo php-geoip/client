@@ -10,7 +10,7 @@ use GeoIp\Events\CacheMiss;
 use GeoIp\Events\LookupCompleted;
 use GeoIp\Events\LookupFailed;
 use GeoIp\Events\LookupStarted;
-use GeoIp\Exceptions\GeoIpException;
+use GeoIp\Contracts\GeoIpException;
 use GeoIp\Exceptions\InvalidIpAddressException;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use Psr\SimpleCache\CacheException;
@@ -45,10 +45,10 @@ final readonly class GeoIp
             $this->events?->dispatch(new LookupCompleted($this->service, $ip, $location, microtime(true) - $start));
 
             return $location;
-        } catch (GeoIpException $exception) {
-            $this->events?->dispatch(new LookupFailed($this->service, $ip, $exception, microtime(true) - $start));
+        } catch (GeoIpException $e) {
+            $this->events?->dispatch(new LookupFailed($this->service, $ip, $e, microtime(true) - $start));
 
-            return $this->default ?? throw $exception;
+            return $this->default ?? throw $e;
         }
     }
 
