@@ -22,6 +22,7 @@ use GeoIp\GeoIp;
 // Create with a service implementation and optional cache
 $geoip = new GeoIp(
     service: $service,          // Your service implementation
+    default: $location,         // Optional default location
     cache: $cache,              // Optional caching
     events: $eventDispatcher    // Optional event dispatcher
 );
