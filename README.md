@@ -113,6 +113,9 @@ use GeoIp\Location;
 
 class MyGeoIpService implements Service
 {
+    /**
+     * @throws \GeoIp\Exceptions\ServiceFailedException
+     */
     public function locate(string $ip): Location
     {
         // Your implementation
