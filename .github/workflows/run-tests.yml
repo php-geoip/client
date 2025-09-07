@@ -11,25 +11,7 @@ on:
       - '**.php'
 
 jobs:
-  setup:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Cache MaxMind Database
-        id: cache-maxmind
-        uses: actions/cache@v4
-        with:
-          path: geoip.tar.gz
-          key: maxmind-database
-
-      - name: Download MaxMind Database
-        if: steps.cache-maxmind.outputs.cache-hit != 'true'
-        env:
-          LICENSE_KEY: ${{ secrets.MAXMIND_LICENSE_KEY }}
-          ACCOUNT_ID: ${{ secrets.MAXMIND_ACCOUNT_ID }}
-        run: curl -s -J -L -u $ACCOUNT_ID:$LICENSE_KEY "https://download.maxmind.com/geoip/databases/GeoLite2-City/download?suffix=tar.gz" > geoip.tar.gz
-
   test:
-    needs: setup
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: true
@@ -48,22 +30,9 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php }}
-          extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, pdo_sqlite, bcmath, soap, intl, gd, exif, iconv, imagick, fileinfo
-          coverage: none
 
       - name: Install dependencies
         run: composer update --${{ matrix.stability }} --prefer-dist --no-interaction
-
-      - name: Restore MaxMind Database Cache
-        uses: actions/cache/restore@v4
-        with:
-          path: geoip.tar.gz
-          key: maxmind-database
-
-      - name: Unpack MaxMind Database
-        run: |
-          tar -zf geoip.tar.gz --directory tests/Fixtures --strip-components=1 --wildcards -x "*.mmdb"
-          rm geoip.tar.gz
 
       - name: Execute tests
         run: composer test
